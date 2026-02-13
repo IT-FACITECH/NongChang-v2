@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model audit_trails {
+  id           BigInt   @id @default(autoincrement())
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  user_uuid    String?  @db.Uuid
+  page         String?
+  display_name String?
+}
+
+model equipments {
+  id                      BigInt   @id(map: "equipments_pkey1") @default(autoincrement())
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  equipment_name          String?
+  equipment_code          String?
+  equipment_description   String?
+  equipment_building      String?
+  equipment_floor         String?
+  equipment_type_code     String?
+  equipment_brand         String?
+  equipment_model         String?
+  equipment_serial_number String?
+  search_text             String?
+  equipment_category      String?
+}
+
+model holdJobReasons {
+  id                BigInt   @id(map: "holdJobReason_pkey") @default(autoincrement())
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  holdJobReasonName String?
+}
+
+model job_activities {
+  id            BigInt    @id @default(autoincrement())
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  job_id        String?   @db.Uuid
+  user_uuid     String?   @db.Uuid
+  status_id     BigInt?
+  detail        String?
+  activity_date DateTime? @db.Timestamptz(6)
+}
+
+model job_photos {
+  id            BigInt   @id @default(autoincrement())
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  photo_path    String?
+  job_id        String?  @db.Uuid
+  photo_path1   String[]
+  job_status_id BigInt?
+}
+
+model job_status {
+  id          BigInt   @id @default(autoincrement())
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  status_name String?
+  expression  String?
+}
+
+model job_technicians {
+  id         BigInt   @id(map: "job_technician_pkey") @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  job_id     String?  @db.Uuid
+  user_uuid  String?  @db.Uuid
+}
+
+model job_types {
+  id         BigInt   @id(map: "job_types_pkey1") @unique @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  type_code  String?
+  type_name  String?
+}
+
+model jobs {
+  id                 BigInt    @default(autoincrement())
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  user_uuid          String?   @db.Uuid
+  job_type_id        BigInt?
+  job_score          BigInt?   @default(-1)
+  job_assignor       String?   @db.Uuid
+  job_status_id      Int?      @db.SmallInt
+  job_assessor       String?   @db.Uuid
+  job_number         String?
+  priority_id        BigInt?
+  appointment        DateTime? @db.Timestamptz(6)
+  equipment_id       BigInt?
+  job_detail         String?
+  job_uuid           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  job_technicians    String[]  @db.Uuid
+  repair_detail      String?
+  repair_date        DateTime? @db.Timestamptz(6)
+  evaluate_detail    String?
+  evaluate_user_uuid String?   @db.Uuid
+  hold_reason        String?
+  pause_detail       String?
+  last_update        DateTime? @db.Timestamptz(6)
+  search_text        String?
+  rerepair_jobnumber String?
+
+  @@id([id, job_uuid], map: "jobs_pkey2")
+}
+
+model jobsOld1 {
+  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  user_uuid      String?   @db.Uuid
+  job_type_id    BigInt?
+  job_score      BigInt?   @default(0)
+  job_assignor   String?   @db.Uuid
+  job_status_id  BigInt?   @default(1)
+  job_assessor   String?   @db.Uuid
+  job_number     String?
+  priority_id    BigInt?
+  appointment    DateTime? @db.Timestamptz(6)
+  location_id    String?   @db.Uuid
+  equipment_id   BigInt?
+  job_detail     String?
+  running_number BigInt    @unique(map: "jobs_running_number_key")
+
+  @@id([id, running_number], map: "jobs_pkey1")
+}
+
+model locations {
+  id            BigInt   @id(map: "places_pkey") @default(autoincrement())
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  location_name String?
+}
+
+model notificationsLogs {
+  id               BigInt   @id @default(autoincrement())
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  notificationType String?
+  notificationText String?
+  jobUUID          String?
+  photoUrl         String?
+  provider         String?
+}
+
+model part_transaction_types {
+  id                         BigInt   @id @default(autoincrement())
+  created_at                 DateTime @default(now()) @db.Timestamptz(6)
+  part_transaction_type_name String?
+}
+
+model part_transactions {
+  part_transaction_id String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  part_id             String?   @db.Uuid
+  job_uuid            String?   @db.Uuid
+  transaction_type    String?
+  quantity            Int?
+  remain_quantity     Int?
+  transaction_date    DateTime? @db.Timestamptz(6)
+  user_uuid           String?   @db.Uuid
+  note                String?
+  job_number          String?
+}
+
+model part_unit_of_measures {
+  part_unit_of_measure_uuid String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  part_unit_of_measure_name String?
+}
+
+model parts_categories {
+  part_category_uuid String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+  part_category_name String?
+  part_category_code String?
+}
+
+model parts_stock {
+  part_id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  part_code          String?
+  part_name          String?
+  unit_of_measure    String?
+  stock_quantity     Int?
+  min_stock_level    Int?     @default(0)
+  max_stock_level    Int?     @default(0)
+  part_category_code String?
+  stock_place_code   String?
+  price              Decimal? @default(0) @db.Decimal(10, 2)
+  note               String?
+  reorder_point      Int?     @default(0)
+  lead_time          Int?
+  cost_price         Decimal? @db.Decimal
+  parts_catagory     String?
+  parts_type         String?
+  parts_status       String?  @default("active")
+  part_photo         String?
+  part_category_name String?
+}
+
+model parts_types {
+  part_type_uuid String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  part_type_name String?
+}
+
+model priority {
+  id            BigInt   @id(map: "urgency_pkey") @default(autoincrement())
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  priority_name String?
+}
+
+model roles {
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  role_name  String?
+}
+
+model running_number {
+  id             BigInt   @id @default(autoincrement())
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  running_number BigInt?  @default(1)
+}
+
+model settings {
+  id                         BigInt   @id @default(autoincrement())
+  created_at                 DateTime @default(now()) @db.Timestamptz(6)
+  LineChannelAccessToken     String?  @default("H/YC9qx7fOBILSUb2qAbxUODgE0ZDZJ7KDmy2nB3BOjBwYPP1JfJGU7xJ/1SVEUxa2LDqql6a4zp0nBY/d4jdO213tCsLoibsMojqmVNGhf9CdYljwg4QYQgBAUnRqOe1xPjZSjnS0uHeTFdfhvZaAdB04t89/1O/w1cDnyilFU=")
+  LineChannelSecret          String?  @default("68a5452aa57c913516fe682eb32cc17f")
+  LineGroupId                String?  @default("C0531180bb9c3411f8c1ceaf1e33736fe")
+  TelegramBotUserName        String?  @default("@facitech_bot")
+  TelegramBotToken           String?  @default("7942929538:AAECntZm6fTGaBMf9jpfxHLxWOPGj11A3iY")
+  TelegramChatId             String?  @default("Chat ID")
+  EnableTelegramNotification Boolean?
+  EnableLineNotification     Boolean?
+  SupabaseANONKey            String?
+  url                        String?
+  printUrl                   String?
+  helpUrl                    String?
+}
+
+model users {
+  id           BigInt   @id(map: "id_pkey") @default(autoincrement())
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  user_uuid    String?  @db.Uuid
+  email        String?
+  display_name String?
+  role_id      BigInt?
+  tel          String?
+  photo        String?
+}
