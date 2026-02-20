@@ -27,7 +27,7 @@ const LoginPage = () => {
       </div>
 
       {/* Character Top Right */}
-      <div className="absolute top-10 right-0 z-10 w-[80px] md:w-[120px] lg:w-[160px] transition-transform duration-500 ease-out block">
+      <div className="absolute top-10 right-0 z-20 w-[100px] md:w-[100px] lg:w-[100px] transition-transform duration-500 ease-out block">
         <Image
           src="/images/character_facitech_(1)-04.png"
           alt="Nong Chang Character"
@@ -98,7 +98,7 @@ const LoginPage = () => {
         </form>
 
         {/* Footer Links */}
-        <div className="mt-6 text-center text-white/80 text-xs space-y-2">
+        <div className="mt-6 w-full text-center text-white/80 text-xs space-y-2">
           <p>
             ยังไม่เคยสมัครใช้งาน?{' '}
             <Link href="/createAccount" className="text-white font-bold underline hover:text-white/100 transition-colors">

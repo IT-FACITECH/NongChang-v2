@@ -25,7 +25,7 @@ const ForgetPassword = () => {
       </div>
 
       {/* Character Top Right */}
-      <div className="absolute top-10 right-0 z-10 w-[80px] md:w-[120px] lg:w-[160px] transition-transform duration-500 ease-out block">
+      <div className="absolute top-10 right-0 z-10 w-[100px] md:w-[100px] lg:w-[100px] transition-transform duration-500 ease-out block">
         <Image
           src="/images/character_facitech_(1)-04.png"
           alt="Nong Chang Character"
