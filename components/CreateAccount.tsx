@@ -81,7 +81,7 @@ const CreateAccount = () => {
         <form className="w-full space-y-4">
           
           {/* Name Input */}
-          <div className="relative">
+          {/* <div className="relative">
             <input
               type="text"
               name="name"
@@ -90,7 +90,7 @@ const CreateAccount = () => {
               placeholder="ชื่อที่อยากให้น้องเรียก"
               className="w-full bg-white/90 backdrop-blur-sm text-gray-800 placeholder-gray-500 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all shadow-sm"
             />
-          </div>
+          </div> */}
 
           {/* Email Input */}
           <div className="relative">
