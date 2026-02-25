@@ -9,242 +9,441 @@ datasource db {
 
 model audit_trails {
   id           BigInt   @id @default(autoincrement())
+  tenant_id    String   @db.Uuid
   created_at   DateTime @default(now()) @db.Timestamptz(6)
   user_uuid    String?  @db.Uuid
-  page         String?
   display_name String?
+  action_type  String
+  module       String?
+  page         String?
+  detail       Json?
+  ip_address   String?
+  tenants      tenants  @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users        users?   @relation(fields: [user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model buildings {
+  id            BigInt   @id @default(autoincrement())
+  tenant_id     String   @db.Uuid
+  site_id       BigInt
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  building_name String
+  sites         sites    @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants       tenants  @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  floors        floors[]
+}
+
+model department_locations {
+  id            BigInt      @id @default(autoincrement())
+  tenant_id     String      @db.Uuid
+  department_id BigInt
+  location_id   BigInt
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  departments   departments @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations     locations   @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants       tenants     @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tenant_id, department_id, location_id])
+}
+
+model departments {
+  id                   BigInt                 @id @default(autoincrement())
+  tenant_id            String                 @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  department_name      String
+  department_locations department_locations[]
+  tenants              tenants                @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users                users[]
+}
+
+model equipment_histories {
+  id                String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String     @db.Uuid
+  created_at        DateTime   @default(now()) @db.Timestamptz(6)
+  equipment_id      BigInt
+  job_uuid          String?    @db.Uuid
+  technician_uuid   String     @db.Uuid
+  maintenance_type  String     @default("Breakdown")
+  symptom           String?
+  root_cause        String?
+  action_taken      String
+  downtime_minutes  Int?       @default(0)
+  repair_cost       Decimal?   @default(0) @db.Decimal
+  start_repair_date DateTime?  @db.Timestamptz(6)
+  end_repair_date   DateTime?  @db.Timestamptz(6)
+  recommendation    String?
+  equipments        equipments @relation(fields: [equipment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jobs              jobs?      @relation(fields: [job_uuid], references: [job_uuid], onDelete: NoAction, onUpdate: NoAction)
+  users             users      @relation(fields: [technician_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+  tenants           tenants    @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model equipments {
-  id                      BigInt   @id(map: "equipments_pkey1") @default(autoincrement())
-  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  id                      BigInt                @id @default(autoincrement())
+  tenant_id               String                @db.Uuid
+  site_id                 BigInt
+  location_id             BigInt?
+  sla_id                  BigInt?
+  created_at              DateTime              @default(now()) @db.Timestamptz(6)
   equipment_name          String?
   equipment_code          String?
   equipment_description   String?
-  equipment_building      String?
-  equipment_floor         String?
   equipment_type_code     String?
   equipment_brand         String?
   equipment_model         String?
   equipment_serial_number String?
   search_text             String?
   equipment_category      String?
+  equipment_histories     equipment_histories[]
+  locations               locations?            @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sites                   sites                 @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  slas                    slas?                 @relation(fields: [sla_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                 tenants               @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  jobs                    jobs[]
+}
+
+model floors {
+  id          BigInt      @id @default(autoincrement())
+  tenant_id   String      @db.Uuid
+  building_id BigInt
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  floor_name  String
+  buildings   buildings   @relation(fields: [building_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants     tenants     @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  locations   locations[]
 }
 
 model holdJobReasons {
-  id                BigInt   @id(map: "holdJobReason_pkey") @default(autoincrement())
+  id                BigInt   @id @default(autoincrement())
   created_at        DateTime @default(now()) @db.Timestamptz(6)
-  holdJobReasonName String?
+  holdJobReasonName String
+  jobs              jobs[]
 }
 
 model job_activities {
-  id            BigInt    @id @default(autoincrement())
-  created_at    DateTime  @default(now()) @db.Timestamptz(6)
-  job_id        String?   @db.Uuid
-  user_uuid     String?   @db.Uuid
+  id            BigInt      @id @default(autoincrement())
+  tenant_id     String      @db.Uuid
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  job_uuid      String      @db.Uuid
+  user_uuid     String?     @db.Uuid
   status_id     BigInt?
   detail        String?
-  activity_date DateTime? @db.Timestamptz(6)
+  activity_date DateTime?   @default(now()) @db.Timestamptz(6)
+  jobs          jobs        @relation(fields: [job_uuid], references: [job_uuid], onDelete: NoAction, onUpdate: NoAction)
+  job_status    job_status? @relation(fields: [status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants       tenants     @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users         users?      @relation(fields: [user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model job_photos {
-  id            BigInt   @id @default(autoincrement())
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  id            BigInt      @id @default(autoincrement())
+  tenant_id     String      @db.Uuid
+  site_id       BigInt
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
   photo_path    String?
-  job_id        String?  @db.Uuid
-  photo_path1   String[]
+  job_uuid      String      @db.Uuid
   job_status_id BigInt?
+  job_status    job_status? @relation(fields: [job_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jobs          jobs        @relation(fields: [job_uuid], references: [job_uuid], onDelete: NoAction, onUpdate: NoAction)
+  sites         sites       @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants       tenants     @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model job_status {
-  id          BigInt   @id @default(autoincrement())
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  status_name String?
-  expression  String?
+  id             BigInt           @id @default(autoincrement())
+  created_at     DateTime         @default(now()) @db.Timestamptz(6)
+  status_name    String
+  expression     String?
+  job_activities job_activities[]
+  job_photos     job_photos[]
+  jobs           jobs[]
 }
 
 model job_technicians {
-  id         BigInt   @id(map: "job_technician_pkey") @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  job_id     String?  @db.Uuid
-  user_uuid  String?  @db.Uuid
+  id               BigInt   @id @default(autoincrement())
+  tenant_id        String   @db.Uuid
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  job_uuid         String   @db.Uuid
+  user_uuid        String   @db.Uuid
+  technician_score BigInt?  @default(-1)
+  evaluate_detail  String?
+  jobs             jobs     @relation(fields: [job_uuid], references: [job_uuid], onDelete: NoAction, onUpdate: NoAction)
+  tenants          tenants  @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users            users    @relation(fields: [user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model job_types {
-  id         BigInt   @id(map: "job_types_pkey1") @unique @default(autoincrement())
+  id         BigInt   @id @default(autoincrement())
   created_at DateTime @default(now()) @db.Timestamptz(6)
   type_code  String?
   type_name  String?
+  jobs       jobs[]
 }
 
 model jobs {
-  id                 BigInt    @default(autoincrement())
-  created_at         DateTime  @default(now()) @db.Timestamptz(6)
-  user_uuid          String?   @db.Uuid
-  job_type_id        BigInt?
-  job_score          BigInt?   @default(-1)
-  job_assignor       String?   @db.Uuid
-  job_status_id      Int?      @db.SmallInt
-  job_assessor       String?   @db.Uuid
-  job_number         String?
-  priority_id        BigInt?
-  appointment        DateTime? @db.Timestamptz(6)
-  equipment_id       BigInt?
-  job_detail         String?
-  job_uuid           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  job_technicians    String[]  @db.Uuid
-  repair_detail      String?
-  repair_date        DateTime? @db.Timestamptz(6)
-  evaluate_detail    String?
-  evaluate_user_uuid String?   @db.Uuid
-  hold_reason        String?
-  pause_detail       String?
-  last_update        DateTime? @db.Timestamptz(6)
-  search_text        String?
-  rerepair_jobnumber String?
+  job_uuid                             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                                   BigInt                @unique @default(autoincrement())
+  tenant_id                            String                @db.Uuid
+  site_id                              BigInt
+  created_at                           DateTime              @default(now()) @db.Timestamptz(6)
+  job_number                           String
+  user_uuid                            String                @db.Uuid
+  job_type_id                          BigInt?
+  job_score                            BigInt?               @default(-1)
+  job_assignor                         String?               @db.Uuid
+  job_status_id                        BigInt?               @default(1)
+  job_assessor                         String?               @db.Uuid
+  priority_id                          BigInt?
+  appointment                          DateTime?             @db.Timestamptz(6)
+  equipment_id                         BigInt?
+  location_id                          BigInt?
+  job_detail                           String?
+  repair_detail                        String?
+  repair_date                          DateTime?             @db.Timestamptz(6)
+  evaluate_detail                      String?
+  evaluate_user_uuid                   String?               @db.Uuid
+  hold_reason_id                       BigInt?
+  pause_detail                         String?
+  last_update                          DateTime?             @default(now()) @db.Timestamptz(6)
+  search_text                          String?
+  rerepair_jobnumber                   String?
+  equipment_histories                  equipment_histories[]
+  job_activities                       job_activities[]
+  job_photos                           job_photos[]
+  job_technicians                      job_technicians[]
+  equipments                           equipments?           @relation(fields: [equipment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_jobs_evaluate_user_uuidTousers users?                @relation("jobs_evaluate_user_uuidTousers", fields: [evaluate_user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+  holdJobReasons                       holdJobReasons?       @relation(fields: [hold_reason_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_jobs_job_assessorTousers       users?                @relation("jobs_job_assessorTousers", fields: [job_assessor], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+  users_jobs_job_assignorTousers       users?                @relation("jobs_job_assignorTousers", fields: [job_assignor], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+  job_status                           job_status?           @relation(fields: [job_status_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  job_types                            job_types?            @relation(fields: [job_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locations                            locations?            @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  priority                             priority?             @relation(fields: [priority_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sites                                sites                 @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                              tenants               @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users_jobs_user_uuidTousers          users                 @relation("jobs_user_uuidTousers", fields: [user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
+  part_transactions                    part_transactions[]
 
-  @@id([id, job_uuid], map: "jobs_pkey2")
-}
-
-model jobsOld1 {
-  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
-  user_uuid      String?   @db.Uuid
-  job_type_id    BigInt?
-  job_score      BigInt?   @default(0)
-  job_assignor   String?   @db.Uuid
-  job_status_id  BigInt?   @default(1)
-  job_assessor   String?   @db.Uuid
-  job_number     String?
-  priority_id    BigInt?
-  appointment    DateTime? @db.Timestamptz(6)
-  location_id    String?   @db.Uuid
-  equipment_id   BigInt?
-  job_detail     String?
-  running_number BigInt    @unique(map: "jobs_running_number_key")
-
-  @@id([id, running_number], map: "jobs_pkey1")
+  @@unique([tenant_id, site_id, job_number])
 }
 
 model locations {
-  id            BigInt   @id(map: "places_pkey") @default(autoincrement())
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-  location_name String?
-}
-
-model notificationsLogs {
-  id               BigInt   @id @default(autoincrement())
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  notificationType String?
-  notificationText String?
-  jobUUID          String?
-  photoUrl         String?
-  provider         String?
+  id                   BigInt                 @id @default(autoincrement())
+  tenant_id            String                 @db.Uuid
+  floor_id             BigInt
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  location_name        String
+  department_locations department_locations[]
+  equipments           equipments[]
+  jobs                 jobs[]
+  floors               floors                 @relation(fields: [floor_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants              tenants                @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model part_transaction_types {
-  id                         BigInt   @id @default(autoincrement())
-  created_at                 DateTime @default(now()) @db.Timestamptz(6)
-  part_transaction_type_name String?
+  id                BigInt              @id @default(autoincrement())
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  type_code         String              @unique
+  type_name         String
+  part_transactions part_transactions[]
 }
 
 model part_transactions {
-  part_transaction_id String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at          DateTime  @default(now()) @db.Timestamptz(6)
-  part_id             String?   @db.Uuid
-  job_uuid            String?   @db.Uuid
-  transaction_type    String?
-  quantity            Int?
-  remain_quantity     Int?
-  transaction_date    DateTime? @db.Timestamptz(6)
-  user_uuid           String?   @db.Uuid
-  note                String?
-  job_number          String?
-}
-
-model part_unit_of_measures {
-  part_unit_of_measure_uuid String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  part_unit_of_measure_name String?
-}
-
-model parts_categories {
-  part_category_uuid String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at         DateTime @default(now()) @db.Timestamptz(6)
-  part_category_name String?
-  part_category_code String?
+  part_transaction_id    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id              String                 @db.Uuid
+  created_at             DateTime               @default(now()) @db.Timestamptz(6)
+  part_id                String                 @db.Uuid
+  job_uuid               String?                @db.Uuid
+  user_uuid              String                 @db.Uuid
+  quantity               Int
+  remain_quantity        Int?
+  transaction_date       DateTime?              @default(now()) @db.Timestamptz(6)
+  note                   String?
+  job_number             String?
+  transaction_type_id    BigInt
+  part_transaction_types part_transaction_types @relation(fields: [transaction_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_part_transaction_type")
+  jobs                   jobs?                  @relation(fields: [job_uuid], references: [job_uuid], onDelete: NoAction, onUpdate: NoAction)
+  parts_stock            parts_stock            @relation(fields: [part_id], references: [part_id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                tenants                @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users                  users                  @relation(fields: [user_uuid], references: [user_uuid], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model parts_stock {
-  part_id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  part_id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String              @db.Uuid
+  site_id            BigInt
   part_code          String?
-  part_name          String?
+  part_name          String
   unit_of_measure    String?
-  stock_quantity     Int?
-  min_stock_level    Int?     @default(0)
-  max_stock_level    Int?     @default(0)
+  stock_quantity     Int?                @default(0)
+  min_stock_level    Int?                @default(0)
+  max_stock_level    Int?                @default(0)
   part_category_code String?
   stock_place_code   String?
-  price              Decimal? @default(0) @db.Decimal(10, 2)
+  price              Decimal?            @default(0) @db.Decimal
   note               String?
-  reorder_point      Int?     @default(0)
+  reorder_point      Int?                @default(0)
   lead_time          Int?
-  cost_price         Decimal? @db.Decimal
+  cost_price         Decimal?            @db.Decimal
   parts_catagory     String?
   parts_type         String?
-  parts_status       String?  @default("active")
+  parts_status       String?             @default("active")
   part_photo         String?
   part_category_name String?
+  part_transactions  part_transactions[]
+  sites              sites               @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants            tenants             @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tenant_id, site_id, part_code])
 }
 
-model parts_types {
-  part_type_uuid String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-  part_type_name String?
+model permissions {
+  id               BigInt             @id @default(autoincrement())
+  action           String
+  resource         String
+  description      String?
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  role_permissions role_permissions[]
+
+  @@unique([action, resource])
 }
 
 model priority {
-  id            BigInt   @id(map: "urgency_pkey") @default(autoincrement())
+  id            BigInt   @id @default(autoincrement())
   created_at    DateTime @default(now()) @db.Timestamptz(6)
   priority_name String?
+  jobs          jobs[]
+  slas          slas[]
+}
+
+model role_permissions {
+  id            BigInt      @id @default(autoincrement())
+  role_id       BigInt
+  permission_id BigInt
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles         roles       @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([role_id, permission_id])
 }
 
 model roles {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  role_name  String?
-}
-
-model running_number {
-  id             BigInt   @id @default(autoincrement())
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-  running_number BigInt?  @default(1)
+  id               BigInt             @id @default(autoincrement())
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  role_name        String             @unique
+  role_permissions role_permissions[]
+  users            users[]
 }
 
 model settings {
   id                         BigInt   @id @default(autoincrement())
+  tenant_id                  String   @unique @db.Uuid
   created_at                 DateTime @default(now()) @db.Timestamptz(6)
-  LineChannelAccessToken     String?  @default("H/YC9qx7fOBILSUb2qAbxUODgE0ZDZJ7KDmy2nB3BOjBwYPP1JfJGU7xJ/1SVEUxa2LDqql6a4zp0nBY/d4jdO213tCsLoibsMojqmVNGhf9CdYljwg4QYQgBAUnRqOe1xPjZSjnS0uHeTFdfhvZaAdB04t89/1O/w1cDnyilFU=")
-  LineChannelSecret          String?  @default("68a5452aa57c913516fe682eb32cc17f")
-  LineGroupId                String?  @default("C0531180bb9c3411f8c1ceaf1e33736fe")
-  TelegramBotUserName        String?  @default("@facitech_bot")
-  TelegramBotToken           String?  @default("7942929538:AAECntZm6fTGaBMf9jpfxHLxWOPGj11A3iY")
-  TelegramChatId             String?  @default("Chat ID")
+  LineChannelAccessToken     String?
+  LineChannelSecret          String?
+  LineGroupId                String?
+  TelegramBotUserName        String?
+  TelegramBotToken           String?
+  TelegramChatId             String?
   EnableTelegramNotification Boolean?
   EnableLineNotification     Boolean?
   SupabaseANONKey            String?
   url                        String?
   printUrl                   String?
   helpUrl                    String?
+  tenants                    tenants  @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model sites {
+  id                   BigInt                 @id @default(autoincrement())
+  tenant_id            String                 @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  site_code            String
+  site_name            String
+  buildings            buildings[]
+  equipments           equipments[]
+  job_photos           job_photos[]
+  jobs                 jobs[]
+  parts_stock          parts_stock[]
+  tenants              tenants                @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  tenant_job_sequences tenant_job_sequences[]
+  users                users[]
+}
+
+model slas {
+  id                   BigInt       @id @default(autoincrement())
+  tenant_id            String       @db.Uuid
+  created_at           DateTime     @default(now()) @db.Timestamptz(6)
+  sla_name             String
+  auto_priority_id     BigInt?
+  resolve_within_hours Int?
+  equipments           equipments[]
+  priority             priority?    @relation(fields: [auto_priority_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants              tenants      @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model tenant_job_sequences {
+  tenant_id  String  @db.Uuid
+  site_id    BigInt
+  period     String
+  last_value Int     @default(0)
+  sites      sites   @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants    tenants @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([tenant_id, site_id, period])
+}
+
+model tenants {
+  tenant_id            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  company_name         String
+  is_active            Boolean?               @default(true)
+  audit_trails         audit_trails[]
+  buildings            buildings[]
+  department_locations department_locations[]
+  departments          departments[]
+  equipment_histories  equipment_histories[]
+  equipments           equipments[]
+  floors               floors[]
+  job_activities       job_activities[]
+  job_photos           job_photos[]
+  job_technicians      job_technicians[]
+  jobs                 jobs[]
+  locations            locations[]
+  part_transactions    part_transactions[]
+  parts_stock          parts_stock[]
+  settings             settings?
+  sites                sites[]
+  slas                 slas[]
+  tenant_job_sequences tenant_job_sequences[]
+  users                users[]
 }
 
 model users {
-  id           BigInt   @id(map: "id_pkey") @default(autoincrement())
-  created_at   DateTime @default(now()) @db.Timestamptz(6)
-  user_uuid    String?  @db.Uuid
-  email        String?
-  display_name String?
-  role_id      BigInt?
-  tel          String?
-  photo        String?
-  username     String
+  user_uuid                           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                           String                @db.Uuid
+  site_id                             BigInt?
+  department_id                       BigInt?
+  role_id                             BigInt?
+  created_at                          DateTime              @default(now()) @db.Timestamptz(6)
+  username                            String                @unique
+  password_hash                       String
+  email                               String
+  display_name                        String?
+  tel                                 String?
+  photo                               String?
+  audit_trails                        audit_trails[]
+  equipment_histories                 equipment_histories[]
+  job_activities                      job_activities[]
+  job_technicians                     job_technicians[]
+  jobs_jobs_evaluate_user_uuidTousers jobs[]                @relation("jobs_evaluate_user_uuidTousers")
+  jobs_jobs_job_assessorTousers       jobs[]                @relation("jobs_job_assessorTousers")
+  jobs_jobs_job_assignorTousers       jobs[]                @relation("jobs_job_assignorTousers")
+  jobs_jobs_user_uuidTousers          jobs[]                @relation("jobs_user_uuidTousers")
+  part_transactions                   part_transactions[]
+  departments                         departments?          @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  roles                               roles?                @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sites                               sites?                @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tenants                             tenants               @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
 }
