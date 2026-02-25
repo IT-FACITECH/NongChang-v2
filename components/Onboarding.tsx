@@ -49,45 +49,41 @@ export function Onboarding() {
         <div className="absolute top-[20%] -left-[10%] w-[40%] h-[40%] rounded-full bg-indigo-100/60 blur-3xl" />
       </div>
 
-      {/* 1. Header with Logo */}
-      <div className="flex justify-start items-center p-6 shrink-0 relative z-10 block">
-        <div className="relative w-32 md:w-40 h-10">
-          <Image
-            src="/images/Logo_Color(B)-06.png"
-            alt="FACITECH Logo"
-            width={200}
-            height={60}
-            className="object-contain object-left block"
-            priority
-          />
-        </div>
+      {/* 1. Header with Logo — same size as Login page */}
+      <div className="absolute top-6 left-6 z-20 w-32 md:w-30 lg:w-40">
+        <Image
+          src="/images/Logo_Color(B)-06.png"
+          alt="FACITECH Logo"
+          width={200}
+          height={60}
+          className="w-full h-auto object-contain"
+          priority
+        />
       </div>
 
-      {/* 2. Carousel */}
-      <div className="flex-1 min-h-0 w-full relative z-10 flex flex-col justify-center">
-        <Carousel setApi={setApi} className="w-full h-full max-h-[600px]">
-          <CarouselContent className="h-full">
+      {/* 2. Carousel — centered vertically */}
+      <div className="flex-1 min-h-0 w-full relative z-10 flex flex-col items-center justify-center">
+        <Carousel setApi={setApi} className="w-full">
+          <CarouselContent>
             {data.map((item, index) => (
-              <CarouselItem key={index} className="h-full">
-                <div className="flex flex-col items-center justify-center h-full px-8 md:px-12 text-center">
+              <CarouselItem key={index}>
+                <div className="flex flex-col items-center px-6 sm:px-8 md:px-16 text-center gap-4 py-4">
                   
                   {/* Image Area */}
-                  <div className="relative w-full max-w-[280px] md:max-w-[280px] aspect-square mb-6 md:mb-8 p-4 flex items-center justify-center mix-blend-multiply">
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={`/images/${item.img}`}
-                        alt={item.title}
-                        fill
-                        className="object-contain drop-shadow-lg"
-                        priority={index === 0}
-                      />
-                    </div>
+                  <div className="relative w-[180px] sm:w-[220px] md:w-[260px] aspect-square mix-blend-multiply">
+                    <Image
+                      src={`/images/${item.img}`}
+                      alt={item.title}
+                      fill
+                      className="object-contain drop-shadow-lg"
+                      priority={index === 0}
+                    />
                   </div>
 
-                  <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight mb-4">
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight">
                     {item.title}
                   </h2>
-                  <p className="text-slate-500 text-base md:text-lg whitespace-nowrap">
+                  <p className="text-slate-500 text-sm sm:text-base md:text-lg leading-relaxed max-w-xs sm:max-w-sm md:max-w-md">
                     {item.desc}
                   </p>
                 </div>
@@ -98,7 +94,7 @@ export function Onboarding() {
       </div>
 
       {/* 3. Footer */}
-      <div className="px-8 pb-10 pt-4 flex flex-col items-center gap-8 shrink-0 relative z-10">
+      <div className="px-6 pb-6 sm:pb-10 pt-2 sm:pt-4 flex flex-col items-center gap-4 sm:gap-6 shrink-0 relative z-10">
         
         {/* Pagination Dots */}
         <div className="flex gap-2.5">
@@ -119,7 +115,7 @@ export function Onboarding() {
         {/* Action Button */}
         <button
           onClick={() => (current === data.length - 1 ? router.push("/login") : api?.scrollNext())}
-          className="w-full max-w-[280px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-3 md:py-3.5 rounded-full font-bold text-base transition-all duration-300 shadow-[0_6px_15px_-5px_rgba(79,70,229,0.5)] hover:shadow-[0_10px_20px_-6px_rgba(79,70,229,0.6)] active:scale-[0.98] flex items-center justify-center gap-2 group mx-auto"
+          className="w-full max-w-[280px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-3 rounded-full font-bold text-base transition-all duration-300 shadow-[0_6px_15px_-5px_rgba(79,70,229,0.5)] hover:shadow-[0_10px_20px_-6px_rgba(79,70,229,0.6)] active:scale-[0.98] flex items-center justify-center gap-2 group mx-auto"
         >
           {current === data.length - 1 ? "เริ่มต้นใช้งาน" : "ถัดไป"}
           {current !== data.length - 1 && (
