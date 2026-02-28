@@ -101,7 +101,7 @@ const LoginPage = () => {
         <div className="mt-6 w-full text-center text-white/80 text-xs space-y-2">
           <p>
             ยังไม่เคยสมัครใช้งาน?{' '}
-            <Link href="/createAccount" className="text-white font-bold underline hover:text-white/100 transition-colors">
+            <Link href="/registerCompany" className="text-white font-bold underline hover:text-white/100 transition-colors">
               ลงทะเบียน
             </Link>
           </p>

@@ -1,8 +1,8 @@
-import React from 'react'
+import LoginPage from '@/components/Login'
 
 const page = () => {
   return (
-    <div>test</div>
+    <div><LoginPage /></div>
   )
 }
 
