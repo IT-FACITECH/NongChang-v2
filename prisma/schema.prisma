@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../app/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -305,6 +306,7 @@ model permissions {
   description      String?
   created_at       DateTime           @default(now()) @db.Timestamptz(6)
   role_permissions role_permissions[]
+  user_permissions user_permissions[]
 
   @@unique([action, resource])
 }
@@ -368,7 +370,7 @@ model sites {
   parts_stock          parts_stock[]
   tenants              tenants                @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
   tenant_job_sequences tenant_job_sequences[]
-  users                users[]
+  user_sites           user_sites[]
 }
 
 model slas {
@@ -397,8 +399,9 @@ model tenant_job_sequences {
 model tenants {
   tenant_id            String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  company_name         String
+  company_name         String                 @unique
   is_active            Boolean?               @default(true)
+  company_code         String?                @unique
   audit_trails         audit_trails[]
   buildings            buildings[]
   department_locations department_locations[]
@@ -417,22 +420,25 @@ model tenants {
   sites                sites[]
   slas                 slas[]
   tenant_job_sequences tenant_job_sequences[]
+  user_permissions     user_permissions[]
+  user_sites           user_sites[]
   users                users[]
 }
 
 model users {
   user_uuid                           String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                           String                @db.Uuid
-  site_id                             BigInt?
   department_id                       BigInt?
   role_id                             BigInt?
   created_at                          DateTime              @default(now()) @db.Timestamptz(6)
-  username                            String                @unique
+  username                            String
   password_hash                       String
   email                               String
   display_name                        String?
   tel                                 String?
   photo                               String?
+  login_identity                      String?               @unique
+  is_tenant_admin                     Boolean               @default(false)
   audit_trails                        audit_trails[]
   equipment_histories                 equipment_histories[]
   job_activities                      job_activities[]
@@ -442,8 +448,39 @@ model users {
   jobs_jobs_job_assignorTousers       jobs[]                @relation("jobs_job_assignorTousers")
   jobs_jobs_user_uuidTousers          jobs[]                @relation("jobs_user_uuidTousers")
   part_transactions                   part_transactions[]
+  user_permissions                    user_permissions[]
+  user_sites                          user_sites[]
   departments                         departments?          @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   roles                               roles?                @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  sites                               sites?                @relation(fields: [site_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tenants                             tenants               @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([tenant_id, username], map: "users_tenant_username_key")
+}
+
+model user_permissions {
+  id            BigInt      @id @default(autoincrement())
+  tenant_id     String      @db.Uuid
+  user_uuid     String      @db.Uuid
+  permission_id BigInt
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  permissions   permissions @relation(fields: [permission_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants       tenants     @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users         users       @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, user_uuid, permission_id])
+}
+
+model user_sites {
+  id              BigInt   @id @default(autoincrement())
+  tenant_id       String   @db.Uuid
+  user_uuid       String   @db.Uuid
+  site_id         BigInt
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  is_primary_site Boolean  @default(false)
+  sites           sites    @relation(fields: [site_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants         tenants  @relation(fields: [tenant_id], references: [tenant_id], onDelete: NoAction, onUpdate: NoAction)
+  users           users    @relation(fields: [user_uuid], references: [user_uuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, user_uuid, site_id])
+  @@unique([tenant_id, user_uuid], map: "user_sites_single_primary_idx", where: raw("(is_primary_site = true)"))
 }
